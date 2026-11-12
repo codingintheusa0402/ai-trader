@@ -1,0 +1,14 @@
+# secrets: never commit
+.env
+.env.*
+!.env.example
+*.pem
+# local state: trading books, order journal, broker tokens, logs, chat
+state/
+# environments / build output
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+# your own private avatar pictures (they win over app/static/avatars/)
+app/static/avatars_local/

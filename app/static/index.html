@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AI Trader">
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+<link rel="icon" href="/static/icon-192.png">
+<title>AI Trader</title>
+<style>
+:root{
+  --bg:#0b0b0b; --bg2:#1a1a1a; --card:#1f1f1f; --bubble:#262626; --line:#1f1f1f; --text:#f2f2f2; --muted:#8e8e8e;
+  --glass:rgba(38,38,38,.72); --glassb:rgba(255,255,255,.09);
+  --yellow:#fee500; --onyellow:#191919; --red:#ff453a; --green:#32d74b;
+  --safe-t:env(safe-area-inset-top); --safe-b:env(safe-area-inset-bottom);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;font-size:15px}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.app{position:fixed;inset:0;display:flex;flex-direction:column}
+.view{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none;padding-bottom:10px}
+.view.on{display:block}
+header.h{display:flex;align-items:center;gap:10px;padding:calc(var(--safe-t) + 12px) 14px 8px}
+header.h h1{font-size:24px;font-weight:800;margin:0;flex:1}
+.pill{font-size:12px;padding:5px 10px;border-radius:999px;background:var(--card);color:var(--muted);display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.dot.g{background:var(--green)} .dot.r{background:var(--red)} .dot.y{background:var(--yellow)}
+.chips{display:flex;gap:6px;padding:0 14px 10px}
+.chip{padding:6px 14px;border-radius:999px;background:var(--card);font-size:14px}
+.chip.on{background:#f2f2f2;color:#111;font-weight:700}
+.room{display:flex;align-items:center;gap:12px;padding:9px 14px;cursor:pointer}
+.room:hover{background:var(--bg2)} .room.sel{background:#2d2d2d}
+.av{width:48px;height:48px;border-radius:42%;object-fit:cover;background:var(--card);flex:none}
+.gav{position:relative;background:none}.gav img{position:absolute;width:32px;height:32px;border-radius:42%;object-fit:cover;border:2px solid var(--bg)}
+.gav img:first-child{left:0;top:0}.gav img:last-child{right:0;bottom:0}
+.cnt{color:var(--muted);font-weight:500;margin-left:5px}
+.room .mid{flex:1;min-width:0}
+.room .nm{font-size:16px;font-weight:700;display:flex;align-items:center;gap:6px}
+.room .pin{color:var(--muted)}
+.room .pv{color:var(--muted);font-size:14px;line-height:1.35;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.room .rt{display:flex;flex-direction:column;align-items:flex-end;gap:6px;align-self:flex-start;padding-top:3px}
+.room .tm{color:var(--muted);font-size:12px;white-space:nowrap}
+.badge{background:var(--red);color:#fff;font-size:12px;font-weight:700;min-width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 6px}
+/* chat room — KakaoTalk iOS (dark): floating glass header + input, black room, tailed bubbles */
+.chat{position:fixed;inset:0;background:var(--bg);display:none;flex-direction:column;z-index:20}
+.chat.on{display:flex}
+.glass{background:var(--glass);border:1px solid var(--glassb);-webkit-backdrop-filter:blur(20px) saturate(160%);backdrop-filter:blur(20px) saturate(160%);
+  box-shadow:0 6px 20px rgba(0,0,0,.35)}
+.chead{position:absolute;left:0;right:0;top:0;z-index:5;display:flex;align-items:center;gap:10px;
+  padding:calc(var(--safe-t) + 8px) 12px 14px;background:linear-gradient(#0b0b0b 40%,#0b0b0bcc 70%,#0b0b0b00)}
+.back{height:50px;min-width:50px;border-radius:25px;display:flex;align-items:center;gap:6px;padding:0 16px 0 12px;font-size:20px;font-weight:500;color:#f2f2f2}
+.back svg{width:24px;height:24px}
+.ctitle{flex:1;min-width:0;text-align:center;font-size:19px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hicons{height:50px;border-radius:25px;display:flex;align-items:center;gap:22px;padding:0 18px;color:#f2f2f2}
+.hicons svg{width:23px;height:23px}
+.msgs{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(var(--safe-t) + 78px) 12px calc(var(--safe-b) + 92px)}
+.datep{margin:18px auto 14px;width:max-content;max-width:92%;background:#262626;color:#f2f2f2;font-size:14px;padding:7px 14px 7px 16px;border-radius:999px;display:flex;align-items:center;gap:6px}
+.datep svg{width:13px;height:13px;color:#cfcfcf}
+.row{display:flex;gap:9px;margin-top:6px;align-items:flex-start}
+.row.g{margin-top:16px}
+.row.me{justify-content:flex-end}
+.row .avs{width:40px;flex:none}
+.row .avs img{width:40px;height:40px;border-radius:42%;object-fit:cover}
+.row .col{display:flex;flex-direction:column;min-width:0;max-width:min(74%,560px)}
+.row.me .col{align-items:flex-end}
+.row .who{font-size:13px;color:#d6d6d6;margin:0 0 6px 2px}
+.line{display:flex;align-items:flex-end;gap:6px;min-width:0}
+.row.me .line{flex-direction:row-reverse}
+.bub{position:relative;background:var(--bubble);color:#f2f2f2;padding:9px 13px;border-radius:17px;font-size:16px;line-height:1.4;white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere;min-width:0}
+.row.me .bub{background:var(--yellow);color:var(--onyellow)}
+.row.tail:not(.me) .bub{border-top-left-radius:5px}
+.row.tail.me .bub{border-top-right-radius:5px}
+.row.tail:not(.me) .bub::before,.row.tail.me .bub::before{content:"";position:absolute;top:0;width:9px;height:11px;background:inherit}
+.row.tail:not(.me) .bub::before{left:-5px;clip-path:polygon(0 0,100% 0,100% 100%)}
+.row.tail.me .bub::before{right:-5px;clip-path:polygon(0 0,100% 0,0 100%)}
+.t{font-size:11.5px;color:var(--muted);white-space:nowrap;padding-bottom:2px}
+.sys{margin:12px auto;max-width:90%;width:max-content;text-align:center;font-size:13.5px;color:#e6e6e6;background:#262626;border-radius:16px;padding:7px 14px;line-height:1.4}
+.typing{display:inline-flex;gap:4px}.typing i{width:6px;height:6px;border-radius:50%;background:#bbb;animation:b 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes b{0%,80%,100%{opacity:.3}40%{opacity:1}}
+.act{margin-top:5px;background:#2a2a2a;border:1px solid #444;border-radius:12px;padding:9px 11px;font-size:14px}
+.act b{display:block;margin-bottom:7px;font-weight:600}
+.act button{background:var(--yellow);color:var(--onyellow);font-weight:700;border-radius:9px;padding:7px 11px;font-size:14px}
+.act button.red{background:var(--red);color:#fff}
+.inwrap{position:absolute;left:0;right:0;bottom:0;z-index:5;padding:0 10px calc(var(--safe-b) + 10px);
+  background:linear-gradient(#0b0b0b00,#0b0b0bdd 45%)}
+.quick{display:flex;gap:6px;padding:0 2px 8px;overflow-x:auto}
+.quick button{flex:none;border-radius:999px;padding:8px 14px;font-size:14px;color:#f2f2f2}
+.inbar{display:flex;align-items:flex-end;gap:8px}
+.inpill{flex:1;min-width:0;display:flex;align-items:center;gap:8px;border-radius:28px;padding:6px 8px 6px 6px;min-height:56px}
+.circ{width:44px;height:44px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#f2f2f2}
+.inpill .circ{background:rgba(255,255,255,.08);border:0;box-shadow:none}
+.circ svg{width:24px;height:24px}
+.inbar textarea{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--text);font:inherit;font-size:16px;resize:none;height:24px;min-height:24px;max-height:110px;padding:0 2px;line-height:24px}
+.inbar textarea::placeholder{color:#8e8e8e}
+.emo{color:#e6e6e6;display:flex;padding:0 6px}.emo svg{width:26px;height:26px}
+.side{width:56px;height:56px}
+.side.send{background:var(--yellow);color:#191919;border-color:transparent}
+/* account / safety */
+.sec{margin:6px 12px 12px;background:var(--card);border-radius:14px;padding:13px}
+.sec h2{font-size:15px;margin:0 0 8px;color:#ddd}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:6px 0;font-size:14px;border-bottom:1px solid var(--line)}
+.kv:last-child{border-bottom:0}
+.kv span:first-child{color:var(--muted)}
+.btn{display:inline-block;background:var(--yellow);color:var(--onyellow);font-weight:700;border-radius:10px;padding:9px 13px;font-size:14px}
+.btn.gh{background:#3a3a3a;color:var(--text)} .btn.red{background:var(--red);color:#fff}
+.note{font-size:13px;color:var(--muted);line-height:1.45;margin-top:6px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+input.tx{width:100%;background:#3a3a3a;border:0;border-radius:9px;color:var(--text);font-size:15px;padding:9px 11px;margin-top:8px}
+.sw{position:relative;width:48px;height:29px;border-radius:15px;background:#4a4a4a;flex:none}
+.sw.on{background:var(--green)} .sw::after{content:"";position:absolute;top:3px;left:3px;width:23px;height:23px;border-radius:50%;background:#fff;transition:.2s}
+.sw.on::after{left:22px}
+.pos{color:var(--green)} .neg{color:var(--red)}
+nav.bn{display:flex;margin:0 14px calc(var(--safe-b) + 8px);border-radius:32px;padding:6px 4px;background:var(--glass);border:1px solid var(--glassb);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
+nav.bn button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--muted);padding:5px 0;position:relative}
+nav.bn button.on{color:var(--text)}
+nav.bn button.on::before{content:"";position:absolute;inset:0 6px;border-radius:24px;background:rgba(255,255,255,.1)}
+nav.bn svg{width:24px;height:24px}
+nav.bn .badge{position:absolute;top:0;left:calc(50% + 6px);height:18px;min-width:18px;font-size:11px}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;justify-content:center;z-index:50}
+.sheet.on{display:flex}
+.sheet .card{width:100%;max-width:480px;background:#2b2b2b;border-radius:18px 18px 0 0;padding:16px 16px calc(var(--safe-b) + 16px)}
+.sheet h3{margin:0 0 6px;font-size:17px}
+.err{color:var(--red);font-size:13px;margin-top:6px;min-height:16px}
+.gate{position:fixed;inset:0;background:var(--bg);display:none;align-items:center;justify-content:center;text-align:center;z-index:99;padding:24px}
+.gate.on{display:flex}
+/* Mac / wide: KakaoTalk PC — list left, chat right, no side margins */
+@media (min-width:760px){
+  .app{right:auto;width:330px;border-right:1px solid var(--line)}
+  .chat{display:flex;left:330px}
+  .back{display:none}
+  .ctitle{text-align:left;padding-left:8px}
+  nav.bn{margin:0 10px 10px}
+  .chat .empty{margin:auto;color:var(--muted)}
+  .sheet{align-items:center} .sheet .card{border-radius:16px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="view on" id="v-chats">
+    <header class="h"><h1>채팅</h1><div class="pill" id="armPill"><span class="dot" id="armDot"></span><span id="armTxt">…</span></div></header>
+    <div class="chips"><span class="chip on">전체</span><span class="chip" id="unreadChip">안읽음</span></div>
+    <div id="rooms"></div>
+    <div class="note" style="padding:6px 14px">진짜 돈으로 매매하는 애들 수다방. 뭘 보고 뭘 했는지 올라오고 아무거나 물어봐도 됨. 채팅은 매매에 아무 영향 없음 (멈춤·재개는 안전 탭).</div>
+  </div>
+  <div class="view" id="v-acct">
+    <header class="h"><h1>계좌</h1><div class="pill" id="tossPill"><span class="dot" id="tossDot"></span>증권사</div></header>
+    <div id="acct"></div>
+  </div>
+  <div class="view" id="v-safe">
+    <header class="h"><h1>안전</h1></header>
+    <div id="safe"></div>
+  </div>
+  <nav class="bn" id="bn">
+    <button data-v="chats" class="on"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.5 3 2 6.6 2 11c0 2.6 1.6 4.9 4 6.3-.2 1.2-.8 2.6-1.8 3.7 2.2-.2 4-1.1 5.2-2.1.9.2 1.7.3 2.6.3 5.5 0 10-3.6 10-8s-4.5-8-10-8z"/></svg>채팅<span class="badge" id="navBadge" style="display:none"></span></button>
+    <button data-v="acct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg>계좌</button>
+    <button data-v="safe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg>안전</button>
+  </nav>
+</div>
+
+<div class="chat" id="chat">
+  <div class="chead" id="chead" style="display:none">
+    <button class="back glass" id="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4l-8 8 8 8"/></svg><span id="backN"></span></button>
+    <div class="ctitle" id="cName"></div>
+    <div class="hicons glass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></div>
+  </div>
+  <div class="msgs" id="msgs"><div class="empty" style="text-align:center;margin-top:40vh;color:#8a8a8a">채팅방을 골라줘</div></div>
+  <div class="inwrap" id="inArea" style="display:none">
+    <div class="quick" id="quick" style="display:none">
+      <button class="glass">지금 뭐 보고 있어?</button><button class="glass">왜 그거 샀어?</button><button class="glass">오늘 어땠냐</button><button class="glass">앞으로 어떻게 할 거야?</button><button class="glass">지금 수익 얼마임?</button>
+    </div>
+    <div class="inbar">
+      <div class="inpill glass">
+        <button class="circ" id="plusBtn" title="빠른 질문"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+        <textarea id="inp" placeholder="메시지 입력" enterkeyhint="send" autocomplete="off" rows="1"></textarea>
+        <span class="emo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9"/><path d="M8.5 14.5s1.3 1.8 3.5 1.8 3.5-1.8 3.5-1.8M9 9.5h.01M15 9.5h.01"/></svg></span>
+      </div>
+      <button class="circ side glass" id="tagBtn" title="빠른 질문"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 4L7 20M17 4l-2 16M4 9h16M3 15h16"/></svg></button>
+      <button class="circ side glass" id="sendBtn" title="전송"></button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="sheet"><div class="card">
+  <h3 id="shT"></h3><div class="note" id="shB" style="font-size:14px"></div>
+  <input class="tx" id="shIn" placeholder='Type CONFIRM'>
+  <div class="err" id="shErr"></div>
+  <div class="btns" style="justify-content:flex-end"><button class="btn gh" id="shNo">취소</button><button class="btn red" id="shYes">확인</button></div>
+</div></div>
+
+<div class="gate" id="gate"><div><b>연결 안 됨</b>
+  <div class="note" style="max-width:300px;margin:8px auto">아이폰 AI Trader 앱에서 맥의 QR 코드로 연결해줘.</div></div></div>
+
+<script>
+// optional private avatars (app/static/avatars_local/<pid>.jpg, gitignored) win; a missing one falls back to the PNG
+document.addEventListener('error', e => { const t = e.target; if (t.tagName === 'IMG' && t.src.includes('/avatars_local/'))
+  t.src = t.src.replace('/avatars_local/', '/avatars/').replace(/\.jpg$/, '.png'); }, true);
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ls = {get:k=>{try{return localStorage.getItem(k)}catch(e){return null}}, set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
+(() => { const u = new URL(location.href), t = u.searchParams.get('pair');
+  if (t) { ls.set('aitoken', t); document.cookie = `aitoken=${t}; max-age=31536000; path=/; SameSite=Strict`;
+           u.searchParams.delete('pair'); history.replaceState(null, '', u.pathname); } })();
+const TOKEN = ls.get('aitoken') || '';
+const nativeMsg = kind => { try{ window.webkit?.messageHandlers?.native?.postMessage({kind}); }catch(e){} };
+const api = async (path, body) => {
+  const h = {'X-Token': TOKEN, 'X-AITrader': '1'}; if (body) h['Content-Type'] = 'application/json';
+  const r = await fetch(path, body ? {method:'POST', headers:h, body:JSON.stringify(body)} : {headers:h});
+  if (r.status === 401) { if (window.AITRADER_NATIVE) nativeMsg('unpaired'); else $('#gate').classList.add('on'); }
+  const txt = await r.text(); let j; try{ j = JSON.parse(txt); }catch(e){ j = {detail:(txt||r.statusText||'no reply').slice(0,200)}; }
+  if (!r.ok) throw new Error(typeof j.detail === 'string' ? j.detail : JSON.stringify(j.detail)); return j;
+};
+const money = v => (v < 0 ? '-$' : '$') + Math.abs(+v || 0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+const pad = n => String(n).padStart(2, '0');
+const ampm = d => `${d.getHours() < 12 ? '오전' : '오후'} ${(d.getHours() % 12) || 12}:${pad(d.getMinutes())}`;
+const dayKey = d => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+const DOW = ['일','월','화','수','목','금','토'];
+const dayLabel = d => `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 ${DOW[d.getDay()]}요일`;
+const listTime = ts => { const d = new Date(ts * 1000), n = new Date();
+  if (dayKey(d) === dayKey(n)) return ampm(d);
+  const y = new Date(n); y.setDate(n.getDate() - 1); if (dayKey(d) === dayKey(y)) return '어제';
+  return `${d.getMonth()+1}월 ${d.getDate()}일`; };
+const AVU = pid => `/static/avatars_local/${pid}.jpg`;
+const NAMEOF = pid => (S.rooms.find(x => x.pid === pid) || {}).name || '';
+const STATUS = {running:'거래 중', waiting:'장 기다리는 중', closing:'정리 중', paused:'일시정지', halted:'멈춤', done:'끝남', stopped:'멈춤'};
+
+const S = {view:'chats', rooms:[], room:null, msgs:new Map(), since:0, timer:null, armed:false};
+
+/* ── navigation ── */
+document.querySelectorAll('#bn button').forEach(b => b.onclick = () => {
+  S.view = b.dataset.v; document.querySelectorAll('#bn button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id === 'v-' + S.view));
+  if (S.view === 'acct') loadAcct(); if (S.view === 'safe') renderSafe();
+});
+
+/* ── chat list ── */
+const lastRead = pid => +(ls.get('read-' + pid) || 0);
+function unread(r){ return r.last && r.last.ts > lastRead(r.pid) && r.last.kind !== 'me' ? 1 : 0; }
+async function loadRooms(){
+  try{
+    const j = await api('/api/live/rooms'); j.rooms.forEach(r => { if (!r.group) r.avatar = AVU(r.pid); }); S.rooms = j.rooms; S.armed = j.armed; S.killed = j.killed;
+    $('#armDot').className = 'dot ' + (j.killed ? 'r' : j.armed ? 'g' : 'y');
+    $('#armTxt').textContent = j.killed ? '킬스위치' : j.armed ? '실전 ON' : '실전 OFF';
+    let total = 0;
+    $('#rooms').innerHTML = j.rooms.map(r => { const u = unread(r); total += u;
+      const pv = r.last ? (r.last.kind === 'me' ? '나: ' : r.group && r.last.who ? NAMEOF(r.last.who) + ': ' : '') + (r.last.parts ? r.last.parts.join(' ') : r.last.text) : (STATUS[r.status] || r.status);
+      const av = r.group ? `<div class="av gav">${r.members.map(k => `<img src="${AVU(k)}" alt="">`).join('')}</div>` : `<img class="av" src="${esc(r.avatar)}" alt="">`;
+      return `<div class="room ${r.pid === S.room ? 'sel' : ''}" data-p="${r.pid}">${av}
+        <div class="mid"><div class="nm">${esc(r.name)}${r.group ? `<span class="cnt">${r.count}</span>` : ''} <svg class="pin" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M16 3l5 5-3 1-4 4 1 5-2 2-4-4-5 5-1-1 5-5-4-4 2-2 5 1 4-4z"/></svg></div><div class="pv">${esc(pv)}</div></div>
+        <div class="rt"><span class="tm">${r.last ? listTime(r.last.ts) : ''}</span>${u ? '<span class="badge">N</span>' : ''}</div></div>`; }).join('');
+    document.querySelectorAll('.room').forEach(e => e.onclick = () => openRoom(e.dataset.p));
+    $('#navBadge').style.display = total ? '' : 'none'; $('#navBadge').textContent = total; $('#backN').textContent = total || '';
+    $('#unreadChip').textContent = '안읽음' + (total ? ' ' + total : '');
+    if (S.room) { const r = S.rooms.find(x => x.pid === S.room); if (r) roomHead(r); }
+  }catch(e){}
+}
+
+/* ── room ── */
+const WIDE = () => matchMedia('(min-width:760px)').matches;
+function roomHead(r){
+  $('#cName').innerHTML = esc(r.name) + (r.group ? `<span class="cnt">${r.count}</span>` : '');
+  if (r.group) { $('#cName').title = '단톡방: 나, ' + r.name; return; }
+  $('#cName').title = `${r.status_ko || r.status} · 시드 ${money(r.budget)}` + (r.holding.length ? ` · ${r.holding.join(', ')} 들고 있음` : ' · 현금만 있음');
+}
+function openRoom(pid){
+  S.room = pid; S.msgs = new Map(); S.since = 0; $('#msgs').innerHTML = '';
+  const r = S.rooms.find(x => x.pid === pid); if (r) roomHead(r);
+  $('#chead').style.display = ''; $('#inArea').style.display = '';
+  document.querySelectorAll('.room').forEach(e => e.classList.toggle('sel', e.dataset.p === pid));
+  $('#chat').classList.add('on'); loadFeed(true);
+  clearInterval(S.timer); S.timer = setInterval(loadFeed, 3000);
+}
+$('#back').onclick = () => { $('#chat').classList.remove('on'); clearInterval(S.timer); S.room = null; loadRooms(); };
+async function loadFeed(first){
+  const pid = S.room; if (!pid) return;
+  try{
+    const since = first ? Date.now()/1000 - 3 * 86400 : S.since;
+    const j = await api(`/api/live/${pid}?since=${since}`);
+    if (pid !== S.room) return;
+    let changed = false;
+    for (const m of j.messages) { const o = S.msgs.get(m.id);
+      if (!o || o.text !== m.text || o.pending !== m.pending || JSON.stringify(o.action) !== JSON.stringify(m.action)) { S.msgs.set(m.id, m); changed = true; }
+      if (!m.pending) S.since = Math.max(S.since, m.ts); }
+    // a pending answer always comes back while it is pending; once it is gone it was answered (the 단톡방 replaces
+    // its placeholder with one message per speaker, under new ids), so drop the old "…" bubble
+    const ids = new Set(j.messages.map(m => m.id));
+    for (const [id, o] of S.msgs) if (o.pending && !ids.has(id)) { S.msgs.delete(id); changed = true; }
+    if (changed || first) render(first);
+    ls.set('read-' + pid, String(Date.now()/1000));
+  }catch(e){}
+}
+const CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>';
+function render(first){
+  const box = $('#msgs'), atBottom = first || box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+  const r = S.rooms.find(x => x.pid === S.room) || {name:'', avatar:''};
+  // one bubble per line: an engine event becomes a few short chat lines, the way a friend texts
+  const items = [];
+  [...S.msgs.values()].sort((a, b) => a.ts - b.ts).forEach(m => {
+    if (m.kind === 'system' || m.kind === 'me' || m.pending) return items.push({m, text: m.text});
+    const parts = m.kind === 'answer' ? m.text.split(/\n+/).map(x => x.trim()).filter(Boolean) : (m.parts || [m.text]);
+    parts.forEach((t, k) => items.push({m, text: t, last: k === parts.length - 1}));
+  });
+  let html = '', lastDay = '', prevWho = '', prevMin = '';
+  items.forEach((it, i) => {
+    const m = it.m, d = new Date(m.ts * 1000);
+    if (dayKey(d) !== lastDay) { lastDay = dayKey(d); html += `<div class="datep">${dayLabel(d)}${CHEV}</div>`; prevWho = ''; }
+    if (m.kind === 'system') { html += `<div class="sys">${esc(it.text)}</div>`; prevWho = ''; return; }
+    const me = m.kind === 'me', spk = m.who || S.room, who = me ? 'me' : spk, min = ampm(d);
+    const nx = items[i + 1], nxWho = nx && (nx.m.kind === 'me' ? 'me' : nx.m.kind === 'system' ? 'sys' : (nx.m.who || S.room));
+    const showT = !nx || nxWho !== who || ampm(new Date(nx.m.ts * 1000)) !== min || dayKey(new Date(nx.m.ts * 1000)) !== lastDay;
+    const head = who !== prevWho || min !== prevMin; prevWho = who; prevMin = min;
+    const body = m.pending ? '<span class="typing"><i></i><i></i><i></i></span>' : esc(it.text);
+    const act = '';   // talk-only: chat never shows action buttons
+    html += `<div class="row ${me ? 'me' : ''} ${head ? 'tail g' : ''}">` +
+      (me ? '' : `<div class="avs">${head ? `<img src="${AVU(spk)}" alt="">` : ''}</div>`) +
+      `<div class="col">${!me && head ? `<div class="who">${esc(NAMEOF(spk))}</div>` : ''}` +
+      `<div class="line"><div class="bub">${body}</div>${showT ? `<span class="t">${min}</span>` : ''}</div>${act}</div></div>`;
+  });
+  box.innerHTML = html;
+  if (atBottom) box.scrollTop = box.scrollHeight;
+}
+const inp = $('#inp'), sendBtn = $('#sendBtn');
+const WAVE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/></svg>';
+const UP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>';
+function sendState(){ const on = !!inp.value.trim(); sendBtn.classList.toggle('send', on); sendBtn.innerHTML = on ? UP : WAVE;
+  inp.style.height = '24px'; if (inp.scrollHeight > 24) inp.style.height = Math.min(inp.scrollHeight, 110) + 'px'; }
+sendState();
+inp.oninput = sendState;
+inp.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); } };
+sendBtn.onclick = send;
+const toggleQuick = () => $('#quick').style.display = $('#quick').style.display === 'none' ? '' : 'none';
+$('#plusBtn').onclick = toggleQuick; $('#tagBtn').onclick = toggleQuick;
+document.querySelectorAll('#quick button').forEach(b => b.onclick = () => { inp.value = b.textContent; send(); });
+async function send(){
+  const text = inp.value.trim(); if (!text || !S.room) return;
+  inp.value = ''; sendState();
+  try{ const j = await api(`/api/live/${S.room}/ask`, {text}); S.msgs.set(j.question.id, j.question); S.msgs.set(j.answer.id, j.answer); render(true); }
+  catch(e){ S.msgs.set('err' + Date.now(), {id:'err' + Date.now(), ts:Date.now()/1000, kind:'answer', text:'전송 안 됨: ' + e.message}); render(true); }
+}
+
+/* ── confirm sheet: the only way chat leads to an action, and only to the existing controls ── */
+const ACT = {pause:['일시정지할까?', '들고 있는 건 그대로 두고, 다시 켤 때까지 새로 안 삼.', 'pause'],
+             resume:['다시 매매 시작할까?', '자기 신호대로 다시 매매함.', 'resume'],
+             stop:['전부 팔고 멈출까?', '이 트레이더가 들고 있는 걸 지금 다 팔고 이번 판 끝냄. 되돌릴 수 없음.', 'stop']};
+let pending = null;
+function confirmAction(kind, plan){
+  const a = ACT[kind]; if (!a || !plan) return;
+  pending = {kind, plan}; $('#shT').textContent = a[0]; $('#shB').textContent = a[1] + ' 진행하려면 CONFIRM 입력.';
+  $('#shIn').value = ''; $('#shErr').textContent = ''; $('#sheet').classList.add('on');
+}
+$('#shNo').onclick = () => { $('#sheet').classList.remove('on'); pending = null; };
+$('#shYes').onclick = async () => {
+  if (!pending) return;
+  if ($('#shIn').value.trim().toUpperCase() !== 'CONFIRM') { $('#shErr').textContent = 'CONFIRM 먼저 입력해줘'; return; }
+  try{ await api(`/api/plan/${pending.plan}/${ACT[pending.kind][2]}`, {}); $('#sheet').classList.remove('on'); pending = null; loadRooms(); loadFeed(); renderSafe(); }
+  catch(e){ $('#shErr').textContent = e.message; }
+};
+
+/* ── account ── */
+async function loadAcct(){
+  try{
+    const [t, x, db] = await Promise.all([api('/api/toss'), api('/api/transfers'), api('/api/daily-budget')]);
+    $('#tossDot').className = 'dot ' + (t.connected ? 'g' : 'r');
+    const items = t.items || [];
+    const pos = items.map(i => `<div class="kv"><span>${esc(i.symbol)} × ${(+i.quantity).toLocaleString()}${i.bot ? '' : ' · 네가 산 거'}</span>
+      <span class="${+i.profitLoss?.amount >= 0 ? 'pos' : 'neg'}">${money(i.marketValue?.amount)} (${(+i.profitLoss?.rate * 100).toFixed(1)}%)</span></div>`).join('');
+    const names = Object.fromEntries(S.rooms.map(r => [r.pid, r.name]));
+    const last = db.last;
+    $('#acct').innerHTML = `
+      <div class="sec"><h2>증권 계좌 (USD)</h2>
+        <div class="kv"><span>현금</span><span>${money(t.cash?.USD)}</span></div>
+        <div class="kv"><span>트레이더들 돈</span><span>${money(Object.values(x.cash || {}).reduce((a, b) => a + b, 0))}</span></div>
+        <div class="kv"><span>아직 안 나눠준 돈</span><span>${money(x.unallocated)}</span></div></div>
+      <div class="sec"><h2>시드 (예산)</h2>${Object.entries(x.budgets || {}).map(([k, v]) =>
+        `<div class="kv"><span>${esc(names[k] || k)}</span><span>${money(v)} · 현금 ${money(x.cash[k])}</span></div>`).join('')}
+        <div class="kv"><span>손실한도 바닥선</span><span>${money(x.limits?.floor)}</span></div></div>
+      <div class="sec"><h2 style="display:flex;justify-content:space-between;align-items:center">매일 계좌 전체로 시드 배분
+        <button class="sw ${db.enabled ? 'on' : ''}" id="dbSw"></button></h2>
+        <div class="note">미장 열리는 날마다 첫 매매 전에, 안 나눠준 돈을 계좌 전체 기준 78/22(대길/아귀)까지 채워줌. 한도 안에서만. 실력 검증 안 된 애는 시드 그대로. 네가 직접 산 주식은 안 셈. 돈 들어왔다고 억지로 사진 않음.</div>
+        ${last ? `<div class="note">마지막 배분 ${esc(last.day)}: 계좌 ${money(last.total)}, 추가 ${Object.entries(last.added || {}).map(([k, v]) => `${esc(names[k] || k)} ${money(v)}`).join(', ') || '없음'}${Object.keys(last.why_not || {}).length ? ' · 검증 안 됨: ' + Object.keys(last.why_not).map(k => esc(names[k] || k)).join(', ') : ''}</div>` : ''}</div>
+      <div class="sec"><h2>보유 종목</h2>${pos || '<div class="note">들고 있는 거 없음</div>'}</div>
+      <div class="sec"><h2>입출금</h2>${(x.transfers || []).slice().reverse().map(r =>
+        `<div class="kv"><span>${new Date(r.t * 1000).toLocaleDateString()} ${esc(r.kind)}</span><span>${money(r.amount)}</span></div>`).join('') || '<div class="note">아직 없음</div>'}</div>`;
+    $('#dbSw').onclick = async () => { const on = !db.enabled;
+      if (on && !confirm('매일 시드 배분 켤까? 다음 미장부터 안 나눠준 돈이 트레이더들한테 감.')) return;
+      await api('/api/daily-budget', {enabled: on}); loadAcct(); };
+  }catch(e){ $('#acct').innerHTML = `<div class="sec"><div class="err">${esc(e.message)}</div></div>`; }
+}
+
+/* ── safety ── */
+function renderSafe(){
+  $('#safe').innerHTML = `
+    <div class="sec"><h2>실전 매매</h2>
+      <div class="kv"><span>상태</span><span>${S.killed ? '킬스위치 눌림' : S.armed ? '켜짐' : '꺼짐'}</span></div>
+      ${S.armed ? '' : `<input class="tx" id="armIn" placeholder='켜려면 REAL MONEY 입력'><div class="btns"><button class="btn" id="armBtn">켜기</button></div>`}
+      <div class="err" id="safeErr"></div></div>
+    ${S.rooms.filter(r => !r.group).map(r => `<div class="sec"><h2>${esc(r.name)} · ${esc(STATUS[r.status] || r.status)}</h2>
+      <div class="kv"><span>시드</span><span>${money(r.budget)}</span></div>
+      <div class="kv"><span>보유</span><span>${esc(r.holding.join(', ') || '없음')}</span></div>
+      ${r.plan ? `<div class="btns">${r.status === 'paused' ? `<button class="btn gh" data-do="resume" data-plan="${r.plan}">재개</button>` : `<button class="btn gh" data-do="pause" data-plan="${r.plan}">일시정지</button>`}
+        <button class="btn red" data-do="stop" data-plan="${r.plan}">전부 팔고 멈춤</button></div>` : ''}</div>`).join('')}
+    <div class="sec"><h2>킬스위치</h2><div class="note">실전 매매 전부 즉시 멈추고 걸린 주문 취소.</div>
+      <label class="note" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="flat"> 트레이더들 보유 종목도 다 팔기</label>
+      <div class="btns"><button class="btn red" id="killBtn">킬스위치</button></div></div>`;
+  $('#safe').querySelectorAll('[data-do]').forEach(b => b.onclick = () => confirmAction(b.dataset.do, b.dataset.plan));
+  const ab = $('#armBtn'); if (ab) ab.onclick = async () => { try{ await api('/api/real/arm', {phrase: $('#armIn').value}); await loadRooms(); renderSafe(); }catch(e){ $('#safeErr').textContent = e.message; } };
+  $('#killBtn').onclick = async () => { if (!confirm('킬스위치: 실전 매매 지금 전부 멈출까?')) return;
+    try{ await api('/api/real/kill', {flatten: $('#flat').checked}); await loadRooms(); renderSafe(); }catch(e){ $('#safeErr').textContent = e.message; } };
+}
+
+loadRooms().then(() => { const h = location.hash.slice(1); if (h && S.rooms.some(r => r.pid === h)) openRoom(h); else if (WIDE() && S.rooms[0]) openRoom(S.rooms[0].pid); });
+setInterval(loadRooms, 5000);
+setInterval(() => { if (S.view === 'acct') loadAcct(); }, 20000);
+</script>
+</body>
+</html>

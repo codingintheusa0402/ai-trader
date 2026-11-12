@@ -1,0 +1,38 @@
+# 대길 and 아귀: the two traders that can trade real money. Read at every engine start.
+# A trader listed here with enabled = true and no plan yet gets one, ALWAYS in dry-run (pretend money).
+# Going live is a separate, explicit step (README "실전 전환"); this file can never turn real money on.
+# Changing a value here after the plan exists does nothing: use ./aitrader update <trader> ... instead.
+#
+# risk      1 Very Low … 5 Very High   (sizes positions, sets the trader's own loss limit: 3% … 20%)
+# horizon   1h 6h 1d 3d 1w 1M 6M        (how long it holds; also the bar size it reads)
+# budget    dry-run money in USD (US) or KRW (KR)
+# min_pct   lock in the gain once the whole plan is up this many % (optional)
+# max_pct   sell everything and finish at this many % (optional)
+# universe  large | all | small         (large caps, large + small/mid, small/mid only)
+# inverse   true lets it buy inverse/2x/3x ETFs when the market falls
+# style     normal | swing              (swing = short in-and-out trades, flat before the close)
+# monthly   true = runs to the end of the month, sells all, starts the next month by itself
+
+[vector]          # 대길: breakout hunter, aggressive
+enabled  = true
+market   = "US"
+risk     = 4
+horizon  = "1d"
+budget   = 1000
+universe = "all"
+inverse  = true
+style    = "normal"
+monthly  = true
+min_pct  = 4
+max_pct  = 10
+
+[blaze]           # 아귀: momentum rider, intraday
+enabled  = true
+market   = "US"
+risk     = 3
+horizon  = "1d"
+budget   = 1000
+universe = "large"
+inverse  = true
+style    = "swing"
+monthly  = true
